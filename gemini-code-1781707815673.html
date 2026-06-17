@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>環保小達人</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --primary-color: #2c3e50;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        /* 鎖定滿版，禁止網頁滾動 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 1.8rem;
+            flex-shrink: 0; /* 確保標題不被壓縮 */
+        }
+
+        /* 主遊戲容器：改為上下排列 */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1100px;
+            height: calc(100vh - 70px); /* 扣除標題與外距的高度 */
+            gap: 20px;
+        }
+
+        /* 上方區域：待分類物品（橫向排列、自動換行） */
+        .items-row {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px dashed #bdc3c7;
+            max-height: 40%; /* 最多佔畫面的 40% */
+            overflow-y: auto; /* 若物品太多可在內部小範圍滾動，不影響大視窗 */
+        }
+
+        /* 物品卡片樣式 */
+        .item-card {
+            background: white;
+            border: 2px solid #bdc3c7;
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .item-card:active {
+            cursor: grabbing;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .item-card img {
+            width: 45px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .item-card span {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        /* 下方區域：分類桶（橫向並排） */
+        .bins-row {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            flex: 1; /* 自動填滿剩下空間 */
+            min-height: 0; /* 防止 flex 項目溢出 */
+        }
+
+        /* 分類桶樣式 */
+        .bin {
+            position: relative;
+            flex: 1;
+            background: white;
+            border: 3px dashed #95a5a6;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .bin.drag-over {
+            background: #e8f8f5;
+            border-color: var(--success-color);
+            transform: scale(1.02);
+        }
+
+        .bin img {
+            width: 10vh; /* 根據視窗高度動態縮放圖片 */
+            height: 10vh;
+            max-width: 90px;
+            max-height: 90px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .bin h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        /* 已正確分類的物品樣式 */
+        .item-card.matched {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+            border-color: var(--success-color);
+            background-color: #f1f9f5;
+        }
+
+        /* 滿版提示遮罩層 */
+        .status-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s ease;
+            z-index: 10;
+        }
+
+        .bin.show-success .status-overlay.success {
+            opacity: 1;
+            background-color: var(--success-color);
+        }
+
+        .bin.show-error .status-overlay.error {
+            opacity: 1;
+            animation: flash-animation 0.2s ease infinite alternate;
+        }
+
+        .bin.show-error {
+            animation: shake-animation 0.4s ease;
+            border-color: var(--error-color);
+        }
+
+        @keyframes flash-animation {
+            0% { background-color: #e74c3c; }
+            100% { background-color: #c0392b; }
+        }
+
+        @keyframes shake-animation {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>環保小達人</h1>
+    
+    <div class="game-container">
+        <div class="items-row" id="items-container"></div>
+
+        <div class="bins-row">
+            <div class="bin" data-category="general">
+                <div class="status-overlay success">🎉 答對了！</div>
+                <div class="status-overlay error">❌ 答錯囉！</div>
+                <img src="https://placehold.co/100x100/e74c3c/white?text=General" alt="一般垃圾">
+                <h2>一般垃圾</h2>
+            </div>
+
+            <div class="bin" data-category="recycle">
+                <div class="status-overlay success">🎉 答對了！</div>
+                <div class="status-overlay error">❌ 答錯囉！</div>
+                <img src="https://placehold.co/100x100/3498db/white?text=Recycle" alt="資源回收">
+                <h2>資源回收</h2>
+            </div>
+
+            <div class="bin" data-category="food">
+                <div class="status-overlay success">🎉 答對了！</div>
+                <div class="status-overlay error">❌ 答錯囉！</div>
+                <img src="https://placehold.co/100x100/f1c40f/white?text=Food" alt="廚餘">
+                <h2>廚餘</h2>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const itemsData = [
+            { id: "1", name: "塑膠袋", category: "general", img: "https://placehold.co/60x60/bdc3c7/white?text=Bag" },
+            { id: "2", name: "紙餐盒", category: "recycle", img: "https://placehold.co/60x60/95a5a6/white?text=Box" },
+            { id: "3", name: "寶特瓶", category: "recycle", img: "https://placehold.co/60x60/3498db/white?text=Bottle" },
+            { id: "4", name: "廚餘", category: "food", img: "https://placehold.co/60x60/e67e22/white?text=Waste" },
+            { id: "5", name: "鋁罐", category: "recycle", img: "https://placehold.co/60x60/7f8c8d/white?text=Can" },
+            { id: "6", name: "鋁箔包", category: "recycle", img: "https://placehold.co/60x60/9b59b6/white?text=Pack" },
+            { id: "7", name: "紙箱", category: "recycle", img: "https://placehold.co/60x60/d35400/white?text=Carton" },
+            { id: "8", name: "紙", category: "recycle", img: "https://placehold.co/60x60/ecf0f1/2c3e50?text=Paper" }
+        ];
+
+        // 🔊 正確音效
+        function playDingDong() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, ctx.currentTime); 
+            gain1.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start();
+            osc1.stop(ctx.currentTime + 0.4);
+
+            setTimeout(() => {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(659.25, ctx.currentTime); 
+                gain2.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start();
+                osc2.stop(ctx.currentTime + 0.5);
+            }, 120);
+        }
+
+        // 🔊 錯誤音效
+        function playErrorSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth'; 
+            osc.frequency.setValueAtTime(130.81, ctx.currentTime); 
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        }
+
+        // 初始化遊戲
+        const itemsContainer = document.getElementById('items-container');
+        const shuffledItems = [...itemsData].sort(() => Math.random() - 0.5);
+
+        shuffledItems.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.draggable = true;
+            card.id = `item-${item.id}`;
+            card.dataset.category = item.category;
+            card.dataset.name = item.name;
+
+            card.innerHTML = `
+                <img src="${item.img}" alt="${item.name}">
+                <span>${item.name}</span>
+            `;
+
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', card.id);
+            });
+
+            itemsContainer.appendChild(card);
+        });
+
+        // 綁定拖曳事件
+        const bins = document.querySelectorAll('.bin');
+
+        bins.forEach(bin => {
+            bin.addEventListener('dragover', (e) => {
+                e.preventDefault(); 
+                if(!bin.classList.contains('show-error') && !bin.classList.contains('show-success')) {
+                    bin.classList.add('drag-over');
+                }
+            });
+
+            bin.addEventListener('dragleave', () => {
+                bin.classList.remove('drag-over');
+            });
+
+            bin.addEventListener('drop', (e) => {
+                e.preventDefault();
+                bin.classList.remove('drag-over');
+                
+                const id = e.dataTransfer.getData('text/plain');
+                const draggedCard = document.getElementById(id);
+                
+                if (!draggedCard) return;
+
+                const itemCategory = draggedCard.dataset.category;
+
+                if (itemCategory === bin.dataset.category) {
+                    playDingDong();
+                    draggedCard.classList.add('matched');
+                    draggedCard.draggable = false;
+                    
+                    bin.classList.add('show-success');
+                    setTimeout(() => { bin.classList.remove('show-success'); }, 800);
+                } else {
+                    playErrorSound();
+                    bin.classList.add('show-error');
+                    setTimeout(() => { bin.classList.remove('show-error'); }, 600);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
