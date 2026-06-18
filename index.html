@@ -299,7 +299,6 @@
 
         let correctCount = 0;
 
-        // 🔊 正確音效
         function playDingDong() {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc1 = ctx.createOscillator();
@@ -327,7 +326,6 @@
             }, 120);
         }
 
-        // 🔊 錯誤音效
         function playErrorSound() {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
@@ -342,7 +340,6 @@
             osc.stop(ctx.currentTime + 0.3);
         }
 
-        // 初始化/重置遊戲
         function initGame() {
             correctCount = 0;
             document.getElementById('score').innerText = correctCount;
@@ -378,7 +375,6 @@
 
         initGame();
 
-        // 綁定拖曳事件
         const bins = document.querySelectorAll('.bin');
         bins.forEach(bin => {
             bin.addEventListener('dragover', (e) => {
