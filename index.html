@@ -335,4 +335,100 @@
             osc.type = 'sawtooth'; 
             osc.frequency.setValueAtTime(130.81, ctx.currentTime); 
             gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        }
+
+        // 初始化/重置遊戲
+        function initGame() {
+            correctCount = 0;
+            document.getElementById('score').innerText = correctCount;
+            
+            const itemsContainer = document.getElementById('items-container');
+            itemsContainer.innerHTML = ''; 
+            
+            const shuffledItems = [...itemsData].sort(() => Math.random() - 0.5);
+
+            shuffledItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.draggable = true;
+                card.id = `item-${item.id}`;
+                card.dataset.category = item.category;
+
+                card.innerHTML = `
+                    <img src="${item.img}" alt="${item.name}">
+                    <span>${item.name}</span>
+                `;
+
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', card.id);
+                });
+
+                itemsContainer.appendChild(card);
+            });
+        }
+
+        function restartGame() {
+            initGame();
+        }
+
+        initGame();
+
+        // 綁定拖曳事件
+        const bins = document.querySelectorAll('.bin');
+        bins.forEach(bin => {
+            bin.addEventListener('dragover', (e) => {
+                e.preventDefault(); 
+                if(!bin.classList.contains('show-error') && !bin.classList.contains('show-success')) {
+                    bin.classList.add('drag-over');
+                }
+            });
+
+            bin.addEventListener('dragleave', () => {
+                bin.classList.remove('drag-over');
+            });
+
+            bin.addEventListener('drop', (e) => {
+                e.preventDefault();
+                bin.classList.remove('drag-over');
+                
+                const id = e.dataTransfer.getData('text/plain');
+                const draggedCard = document.getElementById(id);
+                
+                if (!draggedCard) return;
+
+                const itemCategory = draggedCard.dataset.category;
+
+                if (itemCategory === bin.dataset.category) {
+                    playDingDong();
+                    draggedCard.classList.add('matched');
+                    
+                    correctCount++;
+                    document.getElementById('score').innerText = correctCount;
+
+                    bin.classList.add('show-success');
+                    setTimeout(() => { bin.classList.remove('show-success'); }, 800);
+
+                    if (correctCount === itemsData.length) {
+                        setTimeout(() => {
+                            confetti({
+                                particleCount: 150,
+                                spread: 80,
+                                origin: { y: 0.6 }
+                            });
+                        }, 500);
+                    }
+                } else {
+                    playErrorSound();
+                    bin.classList.add('show-error');
+                    setTimeout(() => { bin.classList.remove('show-error'); }, 600);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
