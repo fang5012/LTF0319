@@ -85,7 +85,6 @@
             gap: 20px;
         }
 
-        /* 上方區域：待分類物品 */
         .items-row {
             display: flex;
             flex-direction: row;
@@ -102,15 +101,14 @@
             flex-grow: 1;
         }
 
-        /* 物品卡片 */
         .item-card {
             background: #f8f9fa;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
-            padding: 8px 16px;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
             cursor: grab;
             transition: all 0.2s ease;
             user-select: none;
@@ -126,19 +124,11 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
         }
 
-        .item-card img {
-            width: 45px;
-            height: 45px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
-
         .item-card span {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
         }
 
-        /* 下方區域：分類桶 */
         .bins-row {
             display: flex;
             flex-direction: row;
@@ -147,7 +137,6 @@
             min-height: 0;
         }
 
-        /* 分類桶樣式 */
         .bin {
             position: relative;
             flex: 1;
@@ -192,7 +181,6 @@
             color: #34495e;
         }
 
-        /* 已正確分類的物品變透明且隱藏 */
         .item-card.matched {
             opacity: 0;
             transform: scale(0);
@@ -205,7 +193,6 @@
             transition: all 0.4s ease;
         }
 
-        /* 滿版提示遮罩層 */
         .status-overlay {
             position: absolute;
             top: 0;
@@ -265,21 +252,21 @@
             <div class="bin" data-category="recycle">
                 <div class="status-overlay success">🎉 答對了！</div>
                 <div class="status-overlay error">❌ 答錯囉！</div>
-                <img src="recycle.png" alt="可回收垃圾">
+                <img src="recycle.jpg" alt="可回收垃圾">
                 <h2>可回收垃圾</h2>
             </div>
 
             <div class="bin" data-category="food">
                 <div class="status-overlay success">🎉 答對了！</div>
                 <div class="status-overlay error">❌ 答錯囉！</div>
-                <img src="food.png" alt="廚餘">
+                <img src="food.jpg" alt="廚餘">
                 <h2>廚餘</h2>
             </div>
 
             <div class="bin" data-category="general">
                 <div class="status-overlay success">🎉 答對了！</div>
                 <div class="status-overlay error">❌ 答錯囉！</div>
-                <img src="general.png" alt="一般垃圾">
+                <img src="general.jpg" alt="一般垃圾">
                 <h2>一般垃圾</h2>
             </div>
         </div>
@@ -287,14 +274,14 @@
 
     <script>
         const itemsData = [
-            { id: "1", name: "塑膠袋", category: "general", img: "https://placehold.co/60x60/bdc3c7/white?text=Bag" },
-            { id: "2", name: "紙餐盒", category: "recycle", img: "https://placehold.co/60x60/95a5a6/white?text=Box" },
-            { id: "3", name: "寶特瓶", category: "recycle", img: "https://placehold.co/60x60/3498db/white?text=Bottle" },
-            { id: "4", name: "廚餘", category: "food", img: "https://placehold.co/60x60/e67e22/white?text=Waste" },
-            { id: "5", name: "鋁罐", category: "recycle", img: "https://placehold.co/60x60/7f8c8d/white?text=Can" },
-            { id: "6", name: "鋁箔包", category: "recycle", img: "https://placehold.co/60x60/9b59b6/white?text=Pack" },
-            { id: "7", name: "紙箱", category: "recycle", img: "https://placehold.co/60x60/d35400/white?text=Carton" },
-            { id: "8", name: "紙", category: "recycle", img: "https://placehold.co/60x60/ecf0f1/2c3e50?text=Paper" }
+            { id: "1", name: "塑膠袋", category: "general" },
+            { id: "2", name: "紙餐盒", category: "recycle" },
+            { id: "3", name: "寶特瓶", category: "recycle" },
+            { id: "4", name: "廚餘", category: "food" },
+            { id: "5", name: "鋁罐", category: "recycle" },
+            { id: "6", name: "鋁箔包", category: "recycle" },
+            { id: "7", name: "紙箱", category: "recycle" },
+            { id: "8", name: "紙", category: "recycle" }
         ];
 
         let correctCount = 0;
@@ -356,10 +343,7 @@
                 card.id = `item-${item.id}`;
                 card.dataset.category = item.category;
 
-                card.innerHTML = `
-                    <img src="${item.img}" alt="${item.name}">
-                    <span>${item.name}</span>
-                `;
+                card.innerHTML = `<span>${item.name}</span>`;
 
                 card.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', card.id);
